@@ -1,75 +1,28 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const fileInput = document.getElementById('file-input');
-    const uploadBtn = document.getElementById('upload-btn');
-    const pdfList = document.getElementById('pdf-list');
-    const dbRequest = indexedDB.open('BerylPharmacoDB', 1);
+document.addEventListener("DOMContentLoaded", function() {
+    const lectureNotes = [
+        { title: "MTH102", link: "notes/MTH102.pdf" },
+        { title: "Drug Metabolism", link: "#" },
+        { title: "Pharmacokinetics", link: "#" },
+        { title: "Pharmacodynamics", link: "#" },
+        { title: "Clinical Trials", link: "#" }
+    ];
 
-    let db;
+    const lectureNotesContainer = document.getElementById("lecture-notes");
 
-    dbRequest.onupgradeneeded = function(event) {
-        db = event.target.result;
-        const objectStore = db.createObjectStore('pdfs', { keyPath: 'name' });
-    };
+    lectureNotes.forEach(note => {
+        const noteElement = document.createElement("div");
+        noteElement.classList.add("lecture-note");
 
-    dbRequest.onsuccess = function(event) {
-        db = event.target.result;
-        loadPDFList();
-    };
+        const noteTitle = document.createElement("span");
+        noteTitle.textContent = note.title;
 
-    dbRequest.onerror = function(event) {
-        console.error('Database error:', event.target.error);
-    };
+        const noteLink = document.createElement("a");
+        noteLink.href = note.link;
+        noteLink.textContent = "Download";
 
-    uploadBtn.addEventListener('click', () => {
-        const file = fileInput.files[0];
-        if (file && file.type === 'application/pdf') {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const pdfData = event.target.result;
-                const transaction = db.transaction(['pdfs'], 'readwrite');
-                const objectStore = transaction.objectStore('pdfs');
-                const pdfRecord = {
-                    name: file.name,
-                    data: pdfData
-                };
-                const request = objectStore.add(pdfRecord);
+        noteElement.appendChild(noteTitle);
+        noteElement.appendChild(noteLink);
 
-                request.onsuccess = function() {
-                    loadPDFList();
-                };
-
-                request.onerror = function() {
-                    console.error('Failed to save PDF');
-                };
-            };
-            reader.readAsDataURL(file);
-        } else {
-            alert('Please upload a valid PDF file');
-        }
+        lectureNotesContainer.appendChild(noteElement);
     });
-
-    function loadPDFList() {
-        while (pdfList.firstChild) {
-            pdfList.removeChild(pdfList.firstChild);
-        }
-        const transaction = db.transaction(['pdfs'], 'readonly');
-        const objectStore = transaction.objectStore('pdfs');
-        const request = objectStore.openCursor();
-
-        request.onsuccess = function(event) {
-            const cursor = event.target.result;
-            if (cursor) {
-                const link = document.createElement('a');
-                link.href = cursor.value.data;
-                link.textContent = cursor.value.name;
-                link.target = '_blank';
-                pdfList.appendChild(link);
-                cursor.continue();
-            }
-        };
-
-        request.onerror = function() {
-            console.error('Failed to retrieve PDFs');
-        };
-    }
 });
